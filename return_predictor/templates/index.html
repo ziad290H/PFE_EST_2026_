@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ReturnSense — Prédiction de Retours</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0a0c10;--surface:#111318;--border:#1e2230;--accent:#4f8ef7;
+    --accent2:#7c3aed;--danger:#ef4444;--success:#22c55e;--warn:#f59e0b;
+    --text:#e8eaf0;--muted:#6b7280;--card:#13161e;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(79,142,247,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(79,142,247,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .glow{position:fixed;width:600px;height:600px;border-radius:50%;filter:blur(120px);opacity:.12;pointer-events:none;z-index:0;}
+  .glow-1{top:-200px;left:-100px;background:var(--accent);}
+  .glow-2{bottom:-200px;right:-100px;background:var(--accent2);}
+  .wrapper{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 24px 60px;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:28px 0 40px;border-bottom:1px solid var(--border);margin-bottom:48px;}
+  .logo{display:flex;align-items:center;gap:12px;}
+  .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;}
+  .logo-text span{color:var(--accent);}
+  .badge{font-size:11px;font-weight:500;background:rgba(79,142,247,.12);color:var(--accent);border:1px solid rgba(79,142,247,.25);border-radius:20px;padding:4px 12px;letter-spacing:.05em;text-transform:uppercase;}
+  .hero{margin-bottom:48px;}
+  .hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,4vw,42px);line-height:1.15;margin-bottom:12px;}
+  .hero h1 em{font-style:normal;color:var(--accent);}
+  .hero p{color:var(--muted);font-size:15px;max-width:520px;line-height:1.7;}
+  .stats{display:flex;gap:24px;margin-bottom:40px;flex-wrap:wrap;}
+  .stat-card{flex:1;min-width:140px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;}
+  .stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--accent);}
+  .stat-lbl{font-size:12px;color:var(--muted);margin-top:2px;}
+  .main-grid{display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start;}
+  .form-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;}
+  .form-card h2{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:24px;display:flex;align-items:center;gap:8px;}
+  .form-card h2::before{content:'';display:block;width:3px;height:16px;background:var(--accent);border-radius:2px;}
+  .section-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:28px 0 14px;display:flex;align-items:center;gap:8px;}
+  .section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field.full{grid-column:1/-1;}
+  label{font-size:12px;color:var(--muted);font-weight:500;}
+  input,select{background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;outline:none;transition:border-color .2s,box-shadow .2s;width:100%;-webkit-appearance:none;}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.12);}
+  select option{background:var(--surface);}
+  .toggle-group{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .toggle-group input[type="radio"]{display:none;}
+  .toggle-group label{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:13px;color:var(--muted);transition:background .15s,color .15s;border:none;}
+  .toggle-group input[type="radio"]:checked+label{background:rgba(79,142,247,.15);color:var(--accent);font-weight:600;}
+  .btn-predict{width:100%;margin-top:28px;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#fff;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.03em;transition:opacity .2s,transform .15s;position:relative;overflow:hidden;}
+  .btn-predict:hover{opacity:.9;transform:translateY(-1px);}
+  .btn-predict:active{transform:translateY(0);}
+  .btn-predict.loading{opacity:.7;pointer-events:none;}
+  .btn-predict .spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin:0 auto;}
+  .btn-predict.loading .btn-label{display:none;}
+  .btn-predict.loading .spinner{display:block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .result-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;position:sticky;top:24px;}
+  .result-panel h2{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--muted);margin-bottom:24px;text-transform:uppercase;letter-spacing:.08em;}
+  .result-idle{text-align:center;padding:40px 0;color:var(--muted);}
+  .result-idle .idle-icon{font-size:40px;margin-bottom:12px;opacity:.4;}
+  .result-idle p{font-size:13px;line-height:1.6;}
+  .result-output{display:none;}
+  .verdict{text-align:center;padding:28px 20px;border-radius:12px;margin-bottom:20px;border:1px solid transparent;transition:all .4s ease;}
+  .verdict.returned{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);}
+  .verdict.not-returned{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.2);}
+  .verdict-icon{font-size:36px;margin-bottom:10px;}
+  .verdict-label{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px;}
+  .verdict.returned .verdict-label{color:var(--danger);}
+  .verdict.not-returned .verdict-label{color:var(--success);}
+  .verdict-sub{font-size:12px;color:var(--muted);}
+  .prob-section{margin-bottom:20px;}
+  .prob-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .prob-header span{font-size:12px;color:var(--muted);}
+  .prob-header strong{font-family:'Syne',sans-serif;font-size:18px;}
+  .prob-bar{height:6px;background:var(--border);border-radius:6px;overflow:hidden;}
+  .prob-fill{height:100%;border-radius:6px;transition:width .8s cubic-bezier(.4,0,.2,1);width:0%;}
+  .prob-fill.high{background:var(--danger);}
+  .prob-fill.medium{background:var(--warn);}
+  .prob-fill.low{background:var(--success);}
+  .detail-rows{display:flex;flex-direction:column;gap:10px;}
+  .detail-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:8px 12px;background:var(--surface);border-radius:8px;border:1px solid var(--border);}
+  .detail-row .dk{color:var(--muted);}
+  .detail-row .dv{font-weight:600;}
+  .dv.risk-high{color:var(--danger);}
+  .dv.risk-medium{color:var(--warn);}
+  .dv.risk-low{color:var(--success);}
+  .error-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:14px;font-size:13px;color:var(--danger);margin-top:16px;display:none;}
+  footer{text-align:center;margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);}
+  .fade-in{animation:fadeIn .5s ease forwards;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  @media(max-width:760px){.main-grid{grid-template-columns:1fr;}.fields{grid-template-columns:1fr;}.result-panel{position:static;}.stats{gap:12px;}}
+</style>
+</head>
+<body>
+<div class="glow glow-1"></div>
+<div class="glow glow-2"></div>
+<div class="wrapper">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📦</div>
+      <div class="logo-text">Return<span>Sense</span></div>
+    </div>
+    <div class="badge">PFE — ML System</div>
+  </header>
+
+  <div class="hero fade-in">
+    <h1>Prédiction de <em>retour produit</em><br>par Machine Learning</h1>
+    <p>Saisissez les caractéristiques d'une commande pour prédire la probabilité qu'un client retourne l'article — alimenté par un modèle Random Forest (AUC = 0.9376).</p>
+  </div>
+
+  <div class="stats fade-in">
+    <div class="stat-card"><div class="stat-val">0.9376</div><div class="stat-lbl">AUC-ROC</div></div>
+    <div class="stat-card"><div class="stat-val">93%</div><div class="stat-lbl">Accuracy globale</div></div>
+    <div class="stat-card"><div class="stat-val">0.31</div><div class="stat-lbl">Seuil optimal</div></div>
+    <div class="stat-card"><div class="stat-val">0.61</div><div class="stat-lbl">F1-Score (retour)</div></div>
+    <div class="stat-card"><div class="stat-val">28</div><div class="stat-lbl">Features</div></div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- FORM -->
+    <div class="form-card fade-in">
+      <h2>Paramètres de la commande</h2>
+
+      <!-- PRODUIT & PRIX -->
+      <div class="section-label">Produit & Prix</div>
+      <div class="fields">
+        <div class="field">
+          <label>Prix de vente (€) — sale_price</label>
+          <input type="number" id="sale_price" value="49.99" step="0.01" min="0"/>
+        </div>
+        <div class="field">
+          <label>Prix catalogue (€) — retail_price</label>
+          <input type="number" id="retail_price" value="79.99" step="0.01" min="0"/>
+        </div>
+        <div class="field">
+          <label>Nb articles — num_of_item</label>
+          <input type="number" id="num_of_item" value="1" min="1"/>
+        </div>
+        <div class="field">
+          <label>Catégorie — category</label>
+          <select id="category">
+            <option>Intimates</option><option>Jeans</option>
+            <option selected>Tops & Tees</option><option>Swim</option>
+            <option>Outerwear & Coats</option><option>Dresses</option>
+            <option>Accessories</option><option>Socks</option>
+            <option>Shorts</option><option>Sleep & Lounge</option>
+            <option>Active</option><option>Suits & Sport Coats</option>
+            <option>Pants & Capris</option><option>Skirts</option>
+            <option>Blazers & Jackets</option><option>Leggings</option>
+            <option>Sweaters</option><option>Fashion Hoodies & Sweatshirts</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Marque — brand</label>
+          <input type="text" id="brand" value="Unknown" placeholder="Ex: Calvin Klein"/>
+        </div>
+        <div class="field">
+          <label>Département — department</label>
+          <select id="department">
+            <option>Women</option><option>Men</option>
+            <option>Kids</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- CLIENT -->
+      <div class="section-label">Client</div>
+      <div class="fields">
+        <div class="field">
+          <label>Âge — age</label>
+          <input type="number" id="age" value="32" min="10" max="100"/>
+        </div>
+        <div class="field">
+          <label>Genre — gender</label>
+          <select id="gender">
+            <option value="F">Femme</option>
+            <option value="M">Homme</option>
+            <option value="Other">Autre</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Pays — country</label>
+          <select id="country">
+            <option>China</option><option>United States</option>
+            <option>Brasil</option><option>South Korea</option>
+            <option>France</option><option>Germany</option>
+            <option>España</option><option selected>United Kingdom</option>
+            <option>Japan</option><option>Australia</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>État / Région — state</label>
+          <input type="text" id="state" value="Unknown" placeholder="Ex: California"/>
+        </div>
+        <div class="field">
+          <label>Ville — city</label>
+          <input type="text" id="city" value="Unknown" placeholder="Ex: London"/>
+        </div>
+        <div class="field">
+          <label>Source de trafic — traffic_source</label>
+          <select id="traffic_source">
+            <option>Organic</option><option selected>Search</option>
+            <option>Email</option><option>Social</option>
+            <option>Display</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Commandes passées — user_total_orders</label>
+          <input type="number" id="user_total_orders" value="8" min="1"/>
+        </div>
+        <div class="field">
+          <label>Retours passés — user_total_returns</label>
+          <input type="number" id="user_total_returns" value="1" min="0"/>
+        </div>
+        <div class="field">
+          <label>Ancienneté compte (jours)</label>
+          <input type="number" id="anciennete_compte_jours" value="365" min="0"/>
+        </div>
+      </div>
+
+      <!-- COMMANDE & LOGISTIQUE -->
+      <div class="section-label">Commande & Logistique</div>
+      <div class="fields">
+        <div class="field">
+          <label>Délai traitement (jours) — delai_traitement_jours</label>
+          <input type="number" id="delai_traitement_jours" value="3" min="0" max="60"/>
+        </div>
+        <div class="field">
+          <label>Mois de commande — order_month</label>
+          <input type="number" id="order_month" value="6" min="1" max="12"/>
+        </div>
+        <div class="field">
+          <label>Heure de commande (0–23) — order_hour</label>
+          <input type="number" id="order_hour" value="14" min="0" max="23"/>
+        </div>
+        <div class="field">
+          <label>Jour semaine (0=Lun) — order_dayofweek</label>
+          <input type="number" id="order_dayofweek" value="2" min="0" max="6"/>
+        </div>
+        <div class="field full">
+          <label>Article expédié ? — a_ete_expedie</label>
+          <div class="toggle-group">
+            <input type="radio" name="a_ete_expedie" id="exp_yes" value="1" checked/>
+            <label for="exp_yes">Oui — Expédié</label>
+            <input type="radio" name="a_ete_expedie" id="exp_no" value="0"/>
+            <label for="exp_no">Non — Non expédié</label>
+          </div>
+        </div>
+        <div class="field full">
+          <label>Commande le weekend ? — is_weekend</label>
+          <div class="toggle-group">
+            <input type="radio" name="is_weekend" id="wk_no" value="0" checked/>
+            <label for="wk_no">Non — Semaine</label>
+            <input type="radio" name="is_weekend" id="wk_yes" value="1"/>
+            <label for="wk_yes">Oui — Weekend</label>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-predict" id="predictBtn" onclick="runPrediction()">
+        <span class="btn-label">⚡ Lancer la prédiction</span>
+        <span class="spinner"></span>
+      </button>
+      <div class="error-box" id="errorBox"></div>
+    </div>
+
+    <!-- RESULT PANEL -->
+    <div class="result-panel fade-in">
+      <h2>Résultat</h2>
+      <div class="result-idle" id="resultIdle">
+        <div class="idle-icon">🔮</div>
+        <p>Renseignez les paramètres de la commande puis lancez la prédiction.</p>
+      </div>
+      <div class="result-output" id="resultOutput">
+        <div class="verdict" id="verdictBox">
+          <div class="verdict-icon" id="verdictIcon"></div>
+          <div class="verdict-label" id="verdictLabel"></div>
+          <div class="verdict-sub" id="verdictSub"></div>
+        </div>
+        <div class="prob-section">
+          <div class="prob-header">
+            <span>Probabilité de retour</span>
+            <strong id="probValue">—</strong>
+          </div>
+          <div class="prob-bar">
+            <div class="prob-fill" id="probFill"></div>
+          </div>
+        </div>
+        <div class="detail-rows">
+          <div class="detail-row">
+            <span class="dk">Niveau de risque</span>
+            <span class="dv" id="riskLevel">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="dk">Seuil de décision</span>
+            <span class="dv">0.31</span>
+          </div>
+          <div class="detail-row">
+            <span class="dk">Modèle</span>
+            <span class="dv">Random Forest</span>
+          </div>
+          <div class="detail-row">
+            <span class="dk">AUC-ROC</span>
+            <span class="dv">0.9376</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+
+  <footer>
+    ReturnSense — Projet de Fin d'Études &nbsp;·&nbsp; Machine Learning Return Prediction System &nbsp;·&nbsp; Random Forest · SMOTE · SHAP
+  </footer>
+</div>
+
+<script>
+async function runPrediction() {
+  const btn = document.getElementById('predictBtn');
+  const errorBox = document.getElementById('errorBox');
+  errorBox.style.display = 'none';
+  btn.classList.add('loading');
+
+  const payload = {
+    sale_price:               parseFloat(document.getElementById('sale_price').value),
+    retail_price:             parseFloat(document.getElementById('retail_price').value),
+    num_of_item:              parseInt(document.getElementById('num_of_item').value),
+    age:                      parseInt(document.getElementById('age').value),
+    category:                 document.getElementById('category').value,
+    brand:                    document.getElementById('brand').value,
+    department:               document.getElementById('department').value,
+    gender:                   document.getElementById('gender').value,
+    country:                  document.getElementById('country').value,
+    state:                    document.getElementById('state').value,
+    city:                     document.getElementById('city').value,
+    traffic_source:           document.getElementById('traffic_source').value,
+    user_total_orders:        parseInt(document.getElementById('user_total_orders').value),
+    user_total_returns:       parseInt(document.getElementById('user_total_returns').value),
+    anciennete_compte_jours:  parseInt(document.getElementById('anciennete_compte_jours').value),
+    delai_traitement_jours:   parseFloat(document.getElementById('delai_traitement_jours').value),
+    order_month:              parseInt(document.getElementById('order_month').value),
+    order_hour:               parseInt(document.getElementById('order_hour').value),
+    order_dayofweek:          parseInt(document.getElementById('order_dayofweek').value),
+    a_ete_expedie:            parseInt(document.querySelector('input[name="a_ete_expedie"]:checked').value),
+    is_weekend:               parseInt(document.querySelector('input[name="is_weekend"]:checked').value),
+  };
+
+  try {
+    const res  = await fetch('/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showResult(data);
+  } catch(e) {
+    errorBox.textContent = '⚠ ' + e.message;
+    errorBox.style.display = 'block';
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+
+function showResult(data) {
+  document.getElementById('resultIdle').style.display = 'none';
+  const out = document.getElementById('resultOutput');
+  out.style.display = 'block';
+
+  const isReturn = data.prediction === 1;
+  const box = document.getElementById('verdictBox');
+  box.className = 'verdict ' + (isReturn ? 'returned' : 'not-returned');
+
+  document.getElementById('verdictIcon').textContent  = isReturn ? '↩️' : '✅';
+  document.getElementById('verdictLabel').textContent = data.label;
+  document.getElementById('verdictSub').textContent   =
+    isReturn
+      ? `Probabilité : ${data.probability}% — au-dessus du seuil ${data.threshold}`
+      : `Probabilité : ${data.probability}% — en-dessous du seuil ${data.threshold}`;
+
+  const fill = document.getElementById('probFill');
+  document.getElementById('probValue').textContent = data.probability + '%';
+  fill.style.width = '0%';
+  fill.className = 'prob-fill ' + (data.probability > 60 ? 'high' : data.probability > 31 ? 'medium' : 'low');
+  setTimeout(() => { fill.style.width = data.probability + '%'; }, 50);
+
+  const riskEl = document.getElementById('riskLevel');
+  riskEl.textContent = data.risk_level;
+  riskEl.className = 'dv risk-' + data.risk_level
+    .replace('élevé','high').replace('modéré','medium').replace('faible','low');
+
+  out.classList.add('fade-in');
+}
+</script>
+</body>
+</html>
