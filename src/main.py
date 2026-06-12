@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import seaborn as sns
 import warnings, os, json, joblib
+from pathlib import Path
 warnings.filterwarnings('ignore')
 
 plt.rcParams.update({
@@ -18,8 +19,16 @@ sns.set_theme(style='whitegrid', palette='husl')
 pd.set_option('display.max_columns', 50)
 pd.set_option('display.float_format', '{:.4f}'.format)
 
-DATA_PATH = '/mnt/c/Users/hp/Desktop/PFE_2026/PFE_EST_FBS/pipeline_corrige_final_originale/data1/'
-SAVE_PATH = '/mnt/c/Users/hp/Desktop/PFE_2026/PFE_EST_FBS/pipeline_corrige_final_originale/output/'
+
+#DATA_PATH = '/mnt/c/Users/hp/Desktop/PFE_2026/PFE_EST_FBS/pipeline_corrige_final_originale/data1/'
+#SAVE_PATH = '/mnt/c/Users/hp/Desktop/PFE_2026/PFE_EST_FBS/pipeline_corrige_final_originale/output/'
+
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+DATA_PATH = BASE_DIR / "data1"
+SAVE_PATH = BASE_DIR / "output"
 os.makedirs(SAVE_PATH, exist_ok=True)
 
 print(f'📁 DATA_PATH : {DATA_PATH}')

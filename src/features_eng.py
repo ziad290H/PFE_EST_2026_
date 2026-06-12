@@ -1,11 +1,16 @@
 import pandas as pd
 import numpy as np
+from pathlib import Path
 
-DATA_PATH = '/mnt/c/Users/hp/Desktop/PFE_2026/PFE_EST_FBS/pipeline_corrige_final_originale/data1/'
-SAVE_PATH = '/mnt/c/Users/hp/Desktop/PFE_2026/PFE_EST_FBS/pipeline_corrige_final_originale/data1/'
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+DATA_PATH = BASE_DIR / "data1"
+SAVE_PATH = BASE_DIR / "data1"
+
 def features_enginering():
     print("chargement de data")
-    df = pd.read_csv(DATA_PATH + "df_cleaned.csv")
+    df = pd.read_csv(DATA_PATH / "df_cleaned.csv")
     print("Dtaset Disponible: ", df.shape)
     
     # ═══════════════════════════════════════════════════════════════════
